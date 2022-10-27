@@ -115,5 +115,15 @@ def httpGetExec(subUrl)
 def formatTime(duration) {
     def hours = (duration / 3600).intValue()
     def mins = ((duration % 3600) / 60).intValue()
-    return String.format("%01d:%02d", hours, mins)
+    def hStr = ""
+    if (hours > 0) {
+        if (hours > 1) hStr = hours + " hrs"
+        else hStr = hours + "hr"
+    }
+    mStr = ""
+    if (mins > 0) {
+        if (mins > 1) mStr = mins + " mins"
+        else mStr = mins + " min"
+    }
+    return hStr + mStr
 }

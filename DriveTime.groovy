@@ -12,7 +12,8 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  *  Change History:
-
+ * v0.1.0 - initial beta
+ * v0.1.0 - revised to be stateless
  */
 
 metadata
@@ -40,15 +41,7 @@ preferences
         input name: "destination_address", type: "text", title: "Destination Address", required: true
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
-}
-
-def logDebug(msg) 
-{
-    if (logEnable)
-    {
-        log.debug(msg)
-    }
-}    
+} 
 
 def push() {
     logDebug("DriveTime Pushed")
@@ -61,34 +54,24 @@ def checkDrive() {
      if (response) {
          state.routes = [:]
          def routes = response.routes
-         for (Integer i=0; i<routes.size(); i++) {
-             def route = routes[i]
+         if (routes[0]){
+             def route = routes[0]
              def summary = route.summary
              def duration = route.legs[0].duration_in_traffic?.value
              def trafficDelay = (route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value)
              def distance = route.legs[0].distance.text
-             state.routes[i.toString()] = [summary: summary, duration: duration, trafficDelay: trafficDelay, distance: distance]
+            sendEvent(name: "route", value: summary)
+            sendEvent(name: "duration", value: duration)
+            sendEvent(name: "durationStr", value: formatTime(duration))
+            sendEvent(name: "trafficDelay", value: trafficDelay)
+            sendEvent(name: "trafficDelayStr", value: formatTime(trafficDelay))
+            sendEvent(name: "distance", value: distance)
          }
-         state.routesAsOf = new Date().getTime()
-         sendDriveEvents()
     }
      else {
          log.warn "No response from Google Traffic API. Check connection."
      }
 }
-
-def sendDriveEvents() {    
-    if (state.routes['0'] != null) {
-        logDebug("Updating DriveTime")
-        sendEvent(name: "route", value: state.routes['0'].summary)
-        sendEvent(name: "duration", value: state.routes['0'].duration)
-        sendEvent(name: "durationStr", value: formatTime(state.routes['0'].duration))
-        sendEvent(name: "trafficDelay", value: state.routes['0'].trafficDelay)
-        sendEvent(name: "trafficDelayStr", value: formatTime(state.routes['0'].trafficDelay))
-        sendEvent(name: "distance", value: state.routes['0'].distance)
-    }
-}
-
 
 def httpGetExec(subUrl)
 {
@@ -128,3 +111,11 @@ def formatTime(duration) {
     if (hStr == "" && mStr == "") mStr = "0 mins"
     return hStr + mStr
 }
+
+def logDebug(msg) 
+{
+    if (logEnable)
+    {
+        log.debug(msg)
+    }
+}   

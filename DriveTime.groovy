@@ -125,5 +125,6 @@ def formatTime(duration) {
         if (mins > 1) mStr = mins + " mins"
         else mStr = mins + " min"
     }
+    if (hStr == "" && mStr == "") mStr = "0 mins"
     return hStr + mStr
 }

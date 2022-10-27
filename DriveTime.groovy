@@ -54,6 +54,7 @@ def checkDrive() {
      if (response) {
          state.routes = [:]
          def routes = response.routes
+         logDebug("Found routes: ${routes}")
          if (routes[0]){
              def route = routes[0]
              def summary = route.summary

@@ -59,7 +59,7 @@ def checkDrive() {
              def route = routes[0]
              def summary = route.summary
              def duration = route.legs[0].duration_in_traffic?.value
-             def trafficDelay = (route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value)
+             def trafficDelay = Math.max(0,(route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value))
              def distance = route.legs[0].distance.text
             sendEvent(name: "route", value: summary)
             sendEvent(name: "duration", value: duration)

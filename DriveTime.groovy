@@ -38,45 +38,47 @@ preferences
     {
        // href(name: "GoogleApiLink", title: "Get Google API Key", required: false, url: "https://developers.google.com/maps/documentation/directions/get-api-key", style: "external")
         input name: "api_key", type: "text", title: "Enter Google API key", required: true
-        input name: "origin_address0", type: "text", title: "Origin Address 0", required: true
-        input name: "destination_address0", type: "text", title: "Destination Address 0", required: true
         input name: "origin_address1", type: "text", title: "Origin Address 1", required: false
         input name: "destination_address1", type: "text", title: "Destination Address 1", required: false
         input name: "origin_address2", type: "text", title: "Origin Address 2", required: false
         input name: "destination_address2", type: "text", title: "Destination Address 2", required: false
         input name: "origin_address3", type: "text", title: "Origin Address 3", required: false
         input name: "destination_address3", type: "text", title: "Destination Address 3", required: false
+        input name: "origin_address4", type: "text", title: "Origin Address 4", required: true
+        input name: "destination_address4", type: "text", title: "Destination Address 4", required: true
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
 } 
 
 def push(buttonNumber) {
-    def origin = settings["origin_address${buttonNumber}"]
-    def destination = settings["destination_address${buttonNumber}"]
-     def subUrl = "directions/json?origin=${origin}&destination=${destination}&key=${api_key}&alternatives=true&mode=driving&departure_time=now"   
-     def response = httpGetExec(subUrl)
-     if (response) {
-         state.routes = [:]
-         def routes = response.routes
-         logDebug("Found routes: ${routes}")
-         if (routes[0]){
-             def route = routes[0]
-             def summary = route.summary
-             def duration = route.legs[0].duration_in_traffic?.value
-             def trafficDelay = Math.max(0,(route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value))
-             def distance = route.legs[0].distance.text
-             state.routes = [origin: origin, destination: destination, route: summary, duration: duration, trafficDelay: trafficDelay, distance: distance, timeUpdated: now()]
-            sendEvent(name: "route", value: summary)
-            sendEvent(name: "duration", value: duration)
-            sendEvent(name: "durationStr", value: formatTime(duration))
-            sendEvent(name: "trafficDelay", value: trafficDelay)
-            sendEvent(name: "trafficDelayStr", value: formatTime(trafficDelay))
-            sendEvent(name: "distance", value: distance)
+    if (buttonNumber <= 4) {
+        def origin = settings["origin_address${buttonNumber}"]
+        def destination = settings["destination_address${buttonNumber}"]
+         def subUrl = "directions/json?origin=${origin}&destination=${destination}&key=${api_key}&alternatives=true&mode=driving&departure_time=now"   
+         def response = httpGetExec(subUrl)
+         if (response) {
+             state.routes = [:]
+             def routes = response.routes
+             logDebug("Found routes: ${routes}")
+             if (routes[0]){
+                 def route = routes[0]
+                 def summary = route.summary
+                 def duration = route.legs[0].duration_in_traffic?.value
+                 def trafficDelay = Math.max(0,(route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value))
+                 def distance = route.legs[0].distance.text
+                 state.routes = [origin: origin, destination: destination, route: summary, duration: duration, trafficDelay: trafficDelay, distance: distance, timeUpdated: now()]
+                sendEvent(name: "route", value: summary)
+                sendEvent(name: "duration", value: duration)
+                sendEvent(name: "durationStr", value: formatTime(duration))
+                sendEvent(name: "trafficDelay", value: trafficDelay)
+                sendEvent(name: "trafficDelayStr", value: formatTime(trafficDelay))
+                sendEvent(name: "distance", value: distance)
+             }
+        }
+         else {
+             log.warn "No response from Google Traffic API. Check connection."
          }
     }
-     else {
-         log.warn "No response from Google Traffic API. Check connection."
-     }
 }
 
 def httpGetExec(subUrl)

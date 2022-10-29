@@ -14,6 +14,7 @@
  *  Change History:
  * v0.1.0 - initial beta
  * v0.1.0 - revised to be stateless
+ * v0.1.1 - PushableButton
  */
 
 metadata
@@ -21,7 +22,7 @@ metadata
     definition(name: "DriveTime", namespace: "lnjustin", author: "Justin Leonard", importUrl: "")
     {
         capability "Actuator"
-        capability "Momentary"
+        capability "PushableButton"
         attribute "duration", "number" // second
         attribute "durationStr", "string" // hh:mm
         attribute "route", "string"
@@ -37,19 +38,22 @@ preferences
     {
        // href(name: "GoogleApiLink", title: "Get Google API Key", required: false, url: "https://developers.google.com/maps/documentation/directions/get-api-key", style: "external")
         input name: "api_key", type: "text", title: "Enter Google API key", required: true
-        input name: "origin_address", type: "text", title: "Origin Address", required: true
-        input name: "destination_address", type: "text", title: "Destination Address", required: true
+        input name: "origin_address0", type: "text", title: "Origin Address 0", required: true
+        input name: "destination_address0", type: "text", title: "Destination Address 0", required: true
+        input name: "origin_address1", type: "text", title: "Origin Address 1", required: false
+        input name: "destination_address1", type: "text", title: "Destination Address 1", required: false
+        input name: "origin_address2", type: "text", title: "Origin Address 2", required: false
+        input name: "destination_address2", type: "text", title: "Destination Address 2", required: false
+        input name: "origin_address3", type: "text", title: "Origin Address 3", required: false
+        input name: "destination_address3", type: "text", title: "Destination Address 3", required: false
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
 } 
 
-def push() {
-    logDebug("DriveTime Pushed")
-    checkDrive()
-}
-
-def checkDrive() {
-     def subUrl = "directions/json?origin=${origin_address}&destination=${destination_address}&key=${api_key}&alternatives=true&mode=driving&departure_time=now"   
+def push(buttonNumber) {
+    def origin = settings["origin_address${buttonNumber}"]
+    def destination = settings["destination_address${buttonNumber}"]
+     def subUrl = "directions/json?origin=${origin}&destination=${destination}&key=${api_key}&alternatives=true&mode=driving&departure_time=now"   
      def response = httpGetExec(subUrl)
      if (response) {
          state.routes = [:]
@@ -61,6 +65,7 @@ def checkDrive() {
              def duration = route.legs[0].duration_in_traffic?.value
              def trafficDelay = Math.max(0,(route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value))
              def distance = route.legs[0].distance.text
+             state.routes = [origin: origin, destination: destination, route: summary, duration: duration, trafficDelay: trafficDelay, distance: distance, timeUpdated: now()]
             sendEvent(name: "route", value: summary)
             sendEvent(name: "duration", value: duration)
             sendEvent(name: "durationStr", value: formatTime(duration))

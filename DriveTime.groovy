@@ -44,8 +44,8 @@ preferences
         input name: "destination_address2", type: "text", title: "Destination Address 2", required: false
         input name: "origin_address3", type: "text", title: "Origin Address 3", required: false
         input name: "destination_address3", type: "text", title: "Destination Address 3", required: false
-        input name: "origin_address4", type: "text", title: "Origin Address 4", required: true
-        input name: "destination_address4", type: "text", title: "Destination Address 4", required: true
+        input name: "origin_address4", type: "text", title: "Origin Address 4", required: false
+        input name: "destination_address4", type: "text", title: "Destination Address 4", required: false
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
 } 

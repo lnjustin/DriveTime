@@ -1,6 +1,6 @@
 /**
  * DriveTime - Powered by Google Traffic
- * Copyright 2022 Justin Leonard
+ * Copyright 2024 lnjustin
  * 
  *  Licensed Virtual the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -15,6 +15,7 @@
  * v0.1.0 - initial beta
  * v0.1.0 - revised to be stateless
  * v0.1.1 - PushableButton
+ * v1.0.0 - Fix trafficDelayStr type
  */
 
 metadata
@@ -27,7 +28,7 @@ metadata
         attribute "durationStr", "string" // hh:mm
         attribute "route", "string"
         attribute "trafficDelay", "number" // seconds
-        attribute "trafficDelayStr", "number" // hh:mm
+        attribute "trafficDelayStr", "string" // hh:mm
         attribute "distance", "number"
     }
 }

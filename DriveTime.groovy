@@ -135,7 +135,7 @@ def go(origin, destination) {
             navigateURLValue += "&travelmode=" + (mode != null ? mode : "driving")
             sendEvent(name: "navigateURL", value: navigateURLValue)
             
-            def navigateStart = "<a href='" + navigateURLValue + "'>Start Navigation</a>'"
+            def navigateStart = "<a href='" + navigateURLValue + "'>Start Navigation</a>"
             sendEvent(name: "startNavigationLink", value: navigateStart)
 
             def timeUpdated = now()

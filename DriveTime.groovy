@@ -16,6 +16,7 @@
  * v0.1.0 - revised to be stateless
  * v0.1.1 - PushableButton
  * v1.0.0 - Fix trafficDelayStr type
+ * v1.1.0 - Add Go Command, Mode of Transportation
  */
 
  import java.text.SimpleDateFormat 

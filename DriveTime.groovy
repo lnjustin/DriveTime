@@ -18,6 +18,7 @@
  * v1.0.0 - Fix trafficDelayStr type
  * v1.1.0 - Add Go Command, Mode of Transportation
  * V1.2.0 - Add distanceStr, units preference, setMode command, map
+ * V1.3.0 - Add start navigation link
  */
 
  import java.text.SimpleDateFormat 
@@ -37,6 +38,8 @@ metadata
         attribute "distance", "number"
         attribute "distanceStr", "number"
         attribute "map", "string"
+        attribute "navigateURL", "string"
+        attribute "startNavigationLink", "string"
 
         attribute "lastUpdate", "string"
         attribute "lastUpdateStr", "string"
@@ -125,6 +128,15 @@ def go(origin, destination) {
             def mapContent = "<div id='${timeUpdated}' style='height: 100%; width: 100%'><iframe src='${mapSource}' allowfullscreen style='height: 100%; width:100%; border: none;' referrerpolicy='no-referrer-when-downgrade'></iframe><div>"
             // timeUpdated as id guards against caching preventing update
             sendEvent(name: "map", value: mapContent)
+            
+            def navigateURLValue = "https://www.google.com/maps/dir/?api=1&dir_action=navigate"
+            navigateURLValue += "&origin=" + URLEncoder.encode(origin,"UTF-8")
+            navigateURLValue += "&destination=" + URLEncoder.encode(destination,"UTF-8")
+            navigateURLValue += "&travelmode=" + (mode != null ? mode : "driving")
+            sendEvent(name: "navigateURL", value: navigateURLValue)
+            
+            def navigateStart = "<a href='" + navigateURLValue + "'>Start Navigation</a>'"
+            sendEvent(name: "startNavigationLink", value: navigateStart)
 
             def timeUpdated = now()
             sendEvent(name: "lastUpdate", value: timeUpdated)

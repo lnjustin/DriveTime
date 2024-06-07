@@ -17,9 +17,11 @@
  * v0.1.1 - PushableButton
  * v1.0.0 - Fix trafficDelayStr type
  * v1.1.0 - Add Go Command, Mode of Transportation
+ * V1.2.0 - Add distanceStr, units preference, setMode command, map
  */
 
  import java.text.SimpleDateFormat 
+ import java.net.URLEncoder
 
 metadata
 {
@@ -27,18 +29,23 @@ metadata
     {
         capability "Actuator"
         capability "PushableButton"
-        attribute "duration", "number" // second
+        attribute "duration", "number" // seconds
         attribute "durationStr", "string" // hh:mm
         attribute "route", "string"
         attribute "trafficDelay", "number" // seconds
         attribute "trafficDelayStr", "string" // hh:mm
         attribute "distance", "number"
+        attribute "distanceStr", "number"
+        attribute "map", "string"
+
         attribute "lastUpdate", "string"
         attribute "lastUpdateStr", "string"
 
         command "go",[[name:"Origin*",type:"STRING", description:"Origin Address"],
 			[name:"Destination*",type:"STRING", description:"Destination Address"]]
-
+        
+        command "setMode",[[name:"Mode*",type:"ENUM", description:"Mode of Transportation", constraints: ["driving", "walking", "bicycling", "transit"]]]
+        command "setTransitMode",[[name:"TransitMode*",type:"ENUM", description:"Mode of Transit", constraints: ["bus", "subway", "train", "tram", "rail"]]]
     }
 }
 
@@ -58,6 +65,7 @@ preferences
         input name: "destination_address4", type: "text", title: "Destination Address 4", required: false
         input name: "mode", type: "enum", title: "Mode of Transportation", options: ["driving", "walking", "bicycling", "transit"], default: "driving", required: false
         if (settings?.mode && settings?.mode == "transit") input name: "transitMode", type: "enum", title: "Transit Type", options: ["bus", "subway", "train", "tram", "rail"], default: "bus", required: false
+        input name: "units", type: "enum", title: "Units", options: ["metric", "imperial"], required: false
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
 } 
@@ -71,7 +79,11 @@ def push(buttonNumber) {
 }
 
 def go(origin, destination) {
-    def subUrl = "directions/json?origin=${origin}&destination=${destination}&key=${api_key}&alternatives=true&departure_time=now" + (mode != null ? "&mode=${mode}" : "&mode=driving") + (mode == "transit" ? "&transit_mode=${transitMode}" : "")  
+    def subUrl = "directions/json?origin=${origin}&destination=${destination}&key=${api_key}&alternatives=true&departure_time=now"
+    subUrl += mode != null ? "&mode=${mode}" : "&mode=driving"
+    subUrl += (mode == "transit" && transitMode != null) ? "&transit_mode=${transitMode}" : ""
+    subUrl += units != null ? "&units=${units}" : "&units=metric" // default to metric
+
     def response = httpGetExec(subUrl)
     if (response) {
         state.routes = [:]
@@ -80,24 +92,39 @@ def go(origin, destination) {
         if (routes[0]){
             def route = routes[0]
             def summary = route.summary
-            def duration = ""
+            def duration = 0
+            def durationStr = ""
             def trafficDelay = ""
             if (mode == "driving") {
                 duration = route.legs[0].duration_in_traffic?.value
+                durationStr = route.legs[0].duration_in_traffic?.text
                 trafficDelay = Math.max(0,(route.legs[0].duration_in_traffic?.value - route.legs[0].duration?.value))
             }
             else {
                 duration = route.legs[0].duration?.value
+                durationStr = route.legs[0].duration?.text
                 trafficDelay = 0
             }
-            def distance = route.legs[0].distance.text
+            def distance = route.legs[0].distance.value // always returned from Google in meters, irrespective of units parameter passed to Google
+            def distanceStr = route.legs[0].distance.text // returned from Google according to units parameter
+            if (units == "imperial") distance = ((double) (distance * 0.00062137)).round(2) // convert meters to miles
 
             sendEvent(name: "route", value: summary)
             sendEvent(name: "duration", value: duration)
-            sendEvent(name: "durationStr", value: formatTime(duration))
+            sendEvent(name: "durationStr", value: durationStr)
             sendEvent(name: "trafficDelay", value: trafficDelay)
             sendEvent(name: "trafficDelayStr", value: formatTime(trafficDelay))
             sendEvent(name: "distance", value: distance)
+            sendEvent(name: "distanceStr", value: distanceStr)
+
+            def mapSource = "https://www.google.com/maps/embed/v1/directions?key=${api_key}"
+            mapSource += "&origin=" + URLEncoder.encode(origin,"UTF-8")
+            mapSource += "&destination=" + URLEncoder.encode(destination,"UTF-8")
+            mapSource += "&mode=" + (mode != null ? mode : "driving")
+            if (units != null) mapSource += "&units=" + units
+            def mapContent = "<div id='${timeUpdated}' style='height: 100%; width: 100%'><iframe src='${mapSource}' allowfullscreen style='height: 100%; width:100%; border: none;' referrerpolicy='no-referrer-when-downgrade'></iframe><div>"
+            // timeUpdated as id guards against caching preventing update
+            sendEvent(name: "map", value: mapContent)
 
             def timeUpdated = now()
             sendEvent(name: "lastUpdate", value: timeUpdated)
@@ -128,6 +155,14 @@ def httpGetExec(subUrl)
     {
         log.warn "httpGetExec() failed: ${e.message}"
     }
+}
+
+def setMode(modeOfTransportation) {
+    device.updateSetting("mode",[value:modeOfTransportation, type:"enum"])
+}
+
+def setTransitMode(modeOfTransit) {
+    device.updateSetting("transitMode",[value:modeOfTransit, type:"enum"])
 }
 
 def formatTime(duration) {

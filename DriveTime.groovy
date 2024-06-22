@@ -19,6 +19,7 @@
  * v1.1.0 - Add Go Command, Mode of Transportation
  * V1.2.0 - Add distanceStr, units preference, setMode command, map
  * V1.3.0 - Add start navigation link
+ * V1.4.0 - Add stop navigation link
  */
 
  import java.text.SimpleDateFormat 
@@ -40,6 +41,8 @@ metadata
         attribute "map", "string"
         attribute "navigateURL", "string"
         attribute "startNavigationLink", "string"
+        attribute "stopNavigateURL", "string"
+        attribute "stopNavigationLink", "string"
 
         attribute "lastUpdate", "string"
         attribute "lastUpdateStr", "string"
@@ -47,6 +50,7 @@ metadata
         command "go",[[name:"Origin*",type:"STRING", description:"Origin Address"],
 			[name:"Destination*",type:"STRING", description:"Destination Address"]]
         
+        command "configure"
         command "setMode",[[name:"Mode*",type:"ENUM", description:"Mode of Transportation", constraints: ["driving", "walking", "bicycling", "transit"]]]
         command "setTransitMode",[[name:"TransitMode*",type:"ENUM", description:"Mode of Transit", constraints: ["bus", "subway", "train", "tram", "rail"]]]
     }
@@ -72,6 +76,21 @@ preferences
         input name: "logEnable", type: "bool", title: "Enable debug logging"
     }
 } 
+
+void configure() {
+    installed()
+}
+
+void installed() {
+    def navigateURLValue = "https://www.google.com/maps/dir/?api=1&dir_action=navigate"
+    navigateURLValue += "&origin=" + URLEncoder.encode("0.0,0.0","UTF-8")
+    navigateURLValue += "&destination=" + URLEncoder.encode("0.0,0.0","UTF-8")
+    navigateURLValue += "&travelmode=" + (mode != null ? mode : "driving")
+    sendEvent(name: "stopNavigateURL", value: navigateURLValue)
+    
+    def navigateStop = "<a href='" + navigateURLValue + "'>Stop Navigation</a>"
+    sendEvent(name: "stopNavigationLink", value: navigateStop)
+}
 
 def push(buttonNumber) {
     if (buttonNumber <= 4) {
